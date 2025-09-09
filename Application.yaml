@@ -1,0 +1,71 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: swiggy-app-multi
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - env: dev
+            namespace: swiggy-dev
+            host: swiggy-dev.local
+            servicePort: "8080"
+          - env: stage
+            namespace: swiggy-stage
+            host: swiggy-stage.local
+            servicePort: "8080"
+          - env: prod
+            namespace: swiggy-prod
+            host: swiggy.example.com
+            servicePort: "8080"
+    - clusters: {}  # optional: use Cluster generator (match all connected clusters); or label-select specific clusters
+  template:
+    metadata:
+      name: 'swiggy-{{env}}'
+      labels:
+        app.kubernetes.io/part-of: swiggy
+        env: '{{env}}'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/Harish6498-git/swiggy-project.git
+        targetRevision: main
+        path: k8s-manifests
+        helm:
+          releaseName: 'swiggy-{{env}}'
+          values: |
+            image:
+              repository: harish0604/swiggy2
+              tag: latest
+              pullPolicy: IfNotPresent
+            containerPort: 3000
+            service:
+              type: ClusterIP
+              port: {{servicePort}}
+              targetPort: 3000
+            ingress:
+              enabled: true
+              className: nginx
+              hosts:
+                - host: {{host}}
+                  paths:
+                    - path: /
+                      pathType: Prefix
+              tls: []
+      destination:
+        # If you prefer per-env clusters, switch this to a cluster generator + templated server/name.
+        server: https://kubernetes.default.svc
+        namespace: '{{namespace}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+        retry:
+          limit: 3
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m
