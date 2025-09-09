@@ -9,15 +9,15 @@ spec:
         elements:
           - env: dev
             namespace: swiggy-dev
-            host: swiggy-dev.local
+            host: dev.harishpro.com
             servicePort: "8080"
           - env: stage
             namespace: swiggy-stage
-            host: swiggy-stage.local
+            host: stage.harishpro.com
             servicePort: "8080"
           - env: prod
             namespace: swiggy-prod
-            host: swiggy.example.com
+            host: harishpro.com
             servicePort: "8080"
     - clusters: {}  # optional: use Cluster generator (match all connected clusters); or label-select specific clusters
   template:
